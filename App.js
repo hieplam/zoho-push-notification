@@ -14,16 +14,20 @@ import {
   ZohoDeskPortalSDK,
   ZDPortalHome,
 } from 'react-native-zohodesk-portal-sdk';
-function onSendMessage() {
+function onShowChat() {
   console.log('send msg click');
-  login('lamhiep16@gmail.com');
-  ZDPortalHome.show();
+  ZDPortalChat.show();
 }
 function initZoho() {
+  ZohoDeskPortalSDK.enableLogs();
+
   ZohoDeskPortalSDK.initialise('your_app_id', 'your_org_id', 'US');
 
-  ZohoDeskPortalSDK.enableLogs();
-  ZohoDeskPortalSDK.enablePush();
+  login('lamhiep16@gmail.com');
+  setTimeout(() => {
+    console.log('-----init push');
+    ZohoDeskPortalSDK.enablePush();
+  }, 5000);
 }
 function login(email) {
   return new Promise((resolve, reject) => {
@@ -51,8 +55,18 @@ const App: () => Node = () => {
       <ScrollView contentInsetAdjustmentBehavior="automatic">
         <View style={styles.container}>
           <Button
-            onPress={onSendMessage}
-            title="Send Message"
+            onPress={onShowChat}
+            title="Show Chat"
+            color="orange"
+            accessibilityLabel="Learn more about this orange button"
+          />
+
+          <Button
+            onPress={() => {
+              console.log('--------show home');
+              ZDPortalHome.show();
+            }}
+            title="Show Home"
             color="orange"
             accessibilityLabel="Learn more about this orange button"
           />

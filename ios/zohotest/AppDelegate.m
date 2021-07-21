@@ -27,6 +27,16 @@ static void InitializeFlipper(UIApplication *application) {
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  //compatible for ip8 https://stackoverflow.com/questions/4086599/why-didregisterforremotenotificationswithdevicetoken-is-not-called/41426587#41426587
+  if ([application respondsToSelector:@selector(registerUserNotificationSettings:)]) {
+    UIUserNotificationSettings *settings = [UIUserNotificationSettings
+        settingsForTypes:(UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert)
+              categories:nil];
+    [application registerUserNotificationSettings:settings];
+  } else {
+    UIRemoteNotificationType myTypes = UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeSound;
+    [application registerForRemoteNotificationTypes:myTypes];
+  }
 #ifdef FB_SONARKIT_ENABLED
   InitializeFlipper(application);
 #endif
@@ -61,7 +71,7 @@ static void InitializeFlipper(UIApplication *application) {
 
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-  NSLog(@"----------------device token %@", [deviceToken description]);
+  NSLog(@"-----------didRegisterForRemoteNotificationsWithDeviceToken");
   const unsigned *tokenBytes = [deviceToken bytes];
   NSString *hexToken = [NSString stringWithFormat:@"%08x%08x%08x%08x%08x%08x%08x%08x",
                                  ntohl(tokenBytes[0]), ntohl(tokenBytes[1]),
@@ -70,6 +80,12 @@ static void InitializeFlipper(UIApplication *application) {
                                  ntohl(tokenBytes[6]), ntohl(tokenBytes[7])];
   
   NSLog(@"hex token ---------------------------------- %@", [hexToken description]);
+  NSString * token = [[[[deviceToken description]
+     stringByReplacingOccurrencesOfString: @"<" withString: @""]
+     stringByReplacingOccurrencesOfString: @">" withString: @""]
+     stringByReplacingOccurrencesOfString: @" " withString: @""];
+  NSLog(@"----------------token %@", token);
+  
   [RNZohoDeskPortalSDK setDeviceIDForZDPortal:hexToken];
 }
 
@@ -92,44 +108,41 @@ static void InitializeFlipper(UIApplication *application) {
 }
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler: (void (^)(UIBackgroundFetchResult))completionHandler {
-
+  NSLog(@"-----------------didReceiveRemoteNotification");
+  [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
   if (application.applicationState == UIApplicationStateInactive)
   {
-    NSLog(
-        @"-----Inactive - the user has tapped in the notification when app was "
-        @"closed or in background");
+    NSLog(@"-----Inactive - the user has tapped in the notification when app was closed or in background");
     // do some tasks
-    [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
-    completionHandler(UIBackgroundFetchResultNewData);
+//    [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
+//    completionHandler(UIBackgroundFetchResultNewData);
   }
   else if (application.applicationState == UIApplicationStateBackground)
   {
-    NSLog(@"-----application Background - notification has arrived when app "
-          @"was in "
-          @"background");
+    NSLog(@"-----application Background - notification has arrived when app was in background");
     NSString *contentAvailable = [NSString stringWithFormat:@"%@",[[userInfo valueForKey:@"aps"] valueForKey:@"content-available"]];
 
     if ([contentAvailable isEqualToString:@"1"])
     {
       // do tasks
-      [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
+//      [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
       NSLog(@"-----content-available is equal to 1");
-      completionHandler(UIBackgroundFetchResultNewData);
+//      completionHandler(UIBackgroundFetchResultNewData);
     }
   }
   else
   {
-    NSLog(@"-------application Active - notication has arrived while app was "
-          @"opened");
+    NSLog(@"-------application Active - notication has arrived while app was opened");
     // Show an in-app banner
     // do tasks
-    [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
-    completionHandler(UIBackgroundFetchResultNewData);
+//    [RNZohoDeskPortalSDK processRemoteNotification:userInfo];
+//    completionHandler(UIBackgroundFetchResultNewData);
   }
 }
 
 #ifdef __IPHONE_8_0
 - (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {
+  NSLog(@"---didRegisterUserNotificationSettings");
   // register to receive notifications
   [application registerForRemoteNotifications];
 }
@@ -139,6 +152,7 @@ static void InitializeFlipper(UIApplication *application) {
          forRemoteNotification:(NSDictionary *)userInfo
              completionHandler:(void (^)())completionHandler {
   // handle the actions
+  NSLog(@"---handleActionWithIdentifier - %@", identifier);
   if ([identifier isEqualToString:@"declineAction"]) {
   } else if ([identifier isEqualToString:@"answerAction"]) {
   }
